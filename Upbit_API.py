@@ -310,3 +310,227 @@ class Upbit_API:
             rounded_price = round(value) - round(value)%1000
     
         return rounded_price
+
+class Upbit_API1:
+    server_url = 'https://api.upbit.com'
+    KRW_balance = '0' # KRW 잔액
+    volume = '0' # 코인 수량
+    price = '0' # 평균 단가
+    coin = '\0' # 코인
+
+    # 생성자
+    def __init__(self, access_key, secret_key):
+        self.access_key = access_key
+        self.secret_key = secret_key
+
+    # 소멸자
+    def __del__(self):
+        print('소멸')
+
+    # 코인 설정
+    def select(self, value, price, volume):
+        self.coin = value
+        self.price = price
+        self.volume = volume
+        
+    def read_order(self):
+        f = open("uuid.txt", 'r')
+        line = f.readline()
+        f.close()
+        return line
+    
+    def write_order(self, data):
+        f = open("uuid.txt", 'w')
+        f.write(data)
+        f.close()
+    
+    # 지정가 매수
+    def buy(self):
+        query = {
+            'market': 'KRW-{}'.format(self.coin),
+            'side': 'bid',
+            'volume': self.volume,
+            'price': self.price,
+            'ord_type': 'limit'
+        }
+
+        query_string = urlencode(query).encode()
+
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
+
+        payload = {
+            'access_key': self.access_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
+
+        jwt_token = jwt.encode(payload, self.secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.post(self.server_url + "/v1/orders", params=query, headers=headers)
+        data = res.json()
+        self.write_order(data['uuid'])
+
+        print('지정가 매수 주문')
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        print(res.json())
+
+    # 지정가 매도
+    def sell(self):
+        query = {
+            'market': 'KRW-{}'.format(self.coin),
+            'side': 'ask',
+            'volume': self.volume,
+            'price': self.price,
+            'ord_type': 'limit'
+        }
+
+        query_string = urlencode(query).encode()
+
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
+
+        payload = {
+            'access_key': self.access_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
+
+        jwt_token = jwt.encode(payload, self.secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.post(self.server_url + "/v1/orders", params=query, headers=headers)
+        data = res.json()
+        self.write_order(data['uuid'])
+
+        print('지정가 매도 주문')
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        print(res.json())
+        
+    # 코인 가격 조회
+    def coin_price(self,temp_coin):
+        querystring = {"market":'KRW-{}'.format(temp_coin),"count":"1"}
+
+        res = requests.request("GET", 'https://api.upbit.com/v1/candles/minutes/1', params=querystring)
+        data = res.json()
+        
+        print('{} 현재 가격: {}원'.format(temp_coin,data[0]['trade_price']))
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+
+    # 주문 취소
+    def order_cancel(self):
+        query = {
+            'uuid': self.read_order()
+        }
+        
+        query_string = urlencode(query).encode()
+
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
+
+        payload = {
+            'access_key': self.access_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+        }
+
+        jwt_token = jwt.encode(payload, self.secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.delete(self.server_url + "/v1/order", params=query, headers=headers)
+
+        print('주문 취소')
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        print(res.json())
+
+    # 주문 조회
+    def order(self):
+        query = {
+            'uuid': self.read_order(),
+        }
+        
+        query_string = urlencode(query).encode()
+
+        m = hashlib.sha512()
+        m.update(query_string)
+        query_hash = m.hexdigest()
+
+        payload = {
+            'access_key': self.access_key,
+            'nonce': str(uuid.uuid4()),
+            'query_hash': query_hash,
+            'query_hash_alg': 'SHA512',
+            }
+
+        jwt_token = jwt.encode(payload, self.secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.get(self.server_url + "/v1/order", params=query, headers=headers)
+
+        data = res.json()
+        self.order_state = data['state']
+
+        print('주문 조회')
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        print(res.json())
+
+    # KRW 잔액 조회
+    def check_KRW(self):
+
+        payload = {
+            'access_key': self.access_key,
+            'nonce': str(uuid.uuid4()),
+        }
+
+        jwt_token = jwt.encode(payload, self.secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.get(self.server_url + "/v1/accounts", headers=headers)
+
+        data = res.json()
+
+        self.KRW_balance = data[0]['balance']
+
+        print('KRW 조회')
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        print(res.json())    
+
+        # res.json() 예시
+        # [{'currency': 'KRW', 'balance': '726418.14648042', 'locked': '0.0', 'avg_buy_price': '0', 'avg_buy_price_modified': True, 'uni': '0', 'avg_buy_price_modified': True, 'unit_currency': 'KRW'}]
+
+    # 코인 잔액 조회
+    def check_coin(self):
+
+        payload = {
+            'access_key': self.access_key,
+            'nonce': str(uuid.uuid4()),
+        }
+
+        jwt_token = jwt.encode(payload, self.secret_key)
+        authorize_token = 'Bearer {}'.format(jwt_token)
+        headers = {"Authorization": authorize_token}
+
+        res = requests.get(self.server_url + "/v1/accounts", headers=headers)
+
+        data = res.json()
+
+        for i in range(len(data)):
+            if (data[i]['currency'] == self.coin):
+                self.volume = data[i]['balance']
+                self.avg_price = data[i]['avg_buy_price']
+
+        print('{} 조회'.format(self.coin))
+        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        print(res.json())

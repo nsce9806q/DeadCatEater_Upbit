@@ -72,7 +72,6 @@ class Upbit_API:
         res = requests.post(self.server_url + "/v1/orders", params=query, headers=headers)
 
         print('시장가 매수 주문')
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())
 
     # 지정가 매도
@@ -108,7 +107,6 @@ class Upbit_API:
         self.order_uuid = data['uuid']
 
         print('지정가 매도 주문')
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())
 
     # 시장가 매도 (손절)
@@ -140,7 +138,7 @@ class Upbit_API:
         res = requests.post(self.server_url + "/v1/orders", params=query, headers=headers)
 
         print('손절')
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
+        # print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())
 
     # 주문 취소
@@ -169,7 +167,6 @@ class Upbit_API:
         res = requests.delete(self.server_url + "/v1/order", params=query, headers=headers)
 
         print('주문 취소')
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())
 
     # 주문 조회
@@ -201,7 +198,6 @@ class Upbit_API:
         self.order_state = data['state']
 
         print('주문 조회')
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())
 
     # KRW 잔액 조회
@@ -223,7 +219,6 @@ class Upbit_API:
         self.KRW_balance = data[0]['balance']
 
         print('KRW 조회')
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())    
 
         # res.json() 예시
@@ -251,7 +246,6 @@ class Upbit_API:
                 self.avg_price = data[i]['avg_buy_price']
 
         print('{} 조회'.format(self.coin))
-        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
         print(res.json())    
 
     async def upbit_ws_client(self):
@@ -280,14 +274,12 @@ class Upbit_API:
                     self.order_cancel()
                     self.sell_market()
                     print('손절')
-                    print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
                     break
                 # 이익 기댓값 이상일 경우 주문 상태 확인 후 break
                 elif (self.profit_price >= data.get('tp')):
                     self.order_inquiry()
                     if(self.order_state == 'done'):
                         print('GAY득')
-                        print(strftime('%y-%m-%d %H:%M:%S', localtime(time())))
                         break
                     
     async def main(self):
